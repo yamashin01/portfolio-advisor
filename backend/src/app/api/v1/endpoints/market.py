@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.database import get_db
 from src.app.models.economic_indicator import EconomicIndicator
+from src.app.models.asset import Asset
+from src.app.models.asset_price import AssetPrice
 from src.app.schemas.market import (
     BondData,
     EconomicIndicatorResponse,
@@ -35,25 +37,48 @@ async def get_market_summary(db: AsyncSession = Depends(get_db)):
         if ind:
             indicators[indicator_type] = ind
 
-    bonds = {}
-    if "us_treasury_10y" in indicators:
-        ind = indicators["us_treasury_10y"]
-        bonds["us_treasury_10y"] = BondData(value=float(ind.value), as_of=ind.date)
-    if "jp_govt_bond_10y" in indicators:
-        ind = indicators["jp_govt_bond_10y"]
-        bonds["jp_govt_bond_10y"] = BondData(value=float(ind.value), as_of=ind.date)
+    bonds: list[BondData] = []
+    bond_names = {"us_treasury_10y": "米国10年国債利回り", "jp_govt_bond_10y": "日本10年国債利回り"}
+    for key in ["us_treasury_10y", "jp_govt_bond_10y"]:
+        if key in indicators:
+            ind = indicators[key]
+            bonds.append(BondData(name=bond_names[key], indicator_type=key, value=float(ind.value), as_of=ind.date))
 
-    forex = {}
-    if "usd_jpy" in indicators:
-        ind = indicators["usd_jpy"]
-        forex["usd_jpy"] = ForexData(value=float(ind.value), as_of=ind.date)
-    if "eur_jpy" in indicators:
-        ind = indicators["eur_jpy"]
-        forex["eur_jpy"] = ForexData(value=float(ind.value), as_of=ind.date)
+    forex: list[ForexData] = []
+    forex_names = {"usd_jpy": "USD/JPY", "eur_jpy": "EUR/JPY"}
+    for key in ["usd_jpy", "eur_jpy"]:
+        if key in indicators:
+            ind = indicators[key]
+            forex.append(ForexData(pair=forex_names[key], rate=float(ind.value), as_of=ind.date))
+
+    # Get index-like assets (SPY, 1321.T) latest prices as indices
+    indices: list[IndexData] = []
+    index_symbols = {"SPY": "S&P 500 (SPY)", "1321.T": "日経225連動型 (1321)"}
+    for symbol, name in index_symbols.items():
+        result = await db.execute(
+            select(AssetPrice)
+            .join(Asset, Asset.id == AssetPrice.asset_id)
+            .where(Asset.symbol == symbol)
+            .order_by(AssetPrice.date.desc())
+            .limit(2)
+        )
+        prices = result.scalars().all()
+        if prices:
+            latest = prices[0]
+            change_pct = None
+            if len(prices) > 1 and prices[1].close and prices[1].close > 0:
+                change_pct = (float(latest.close) - float(prices[1].close)) / float(prices[1].close)
+            indices.append(IndexData(
+                name=name,
+                symbol=symbol,
+                value=float(latest.close) if latest.close else None,
+                change_pct=change_pct,
+                as_of=latest.date,
+            ))
 
     return MarketSummaryResponse(
         updated_at=datetime.now(timezone.utc),
-        indices={},  # TODO: indices can be derived from asset prices (SPY, 1321.T)
+        indices=indices,
         bonds=bonds,
         forex=forex,
     )
@@ -79,7 +104,7 @@ async def get_indicators(db: AsyncSession = Depends(get_db)):
                     indicator_name=ind.indicator_name,
                     value=float(ind.value),
                     currency=ind.currency,
-                    date=ind.date,
+                    as_of=ind.date,
                     source=ind.source,
                 )
             )
