@@ -1,0 +1,37 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**"]
+  pull_request:
+    branches: [main]
+    paths: ["frontend/**"]
+
+jobs:
+  lint-build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        working-directory: frontend
+        run: bun run lint
+
+      - name: Build
+        working-directory: frontend
+        run: bun run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+      - name: Test
+        working-directory: frontend
+        run: bun test

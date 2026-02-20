@@ -1,0 +1,51 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**"]
+  pull_request:
+    branches: [main]
+    paths: ["backend/**"]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: portfolio_advisor_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --dev
+
+      - name: Lint
+        working-directory: backend
+        run: uv run ruff check src tests
+
+      - name: Test
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/portfolio_advisor_test
+        run: uv run pytest --cov=src -v
