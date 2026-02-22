@@ -16,6 +16,19 @@ export const metadata: Metadata = {
   title: "AI ポートフォリオアドバイザー",
   description:
     "あなたのリスク許容度に合わせた最適なポートフォリオをAIが提案します。日米の金融資産データに基づく教育目的の情報提供サービスです。",
+  manifest: "/manifest.json",
+  icons: [
+    { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+  ],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "PortAdvisor",
+  },
+  other: {
+    "theme-color": "#0f172a",
+  },
 };
 
 export default function RootLayout({

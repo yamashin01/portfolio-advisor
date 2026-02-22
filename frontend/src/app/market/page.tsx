@@ -1,27 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { apiClient } from "@/lib/api-client";
-import type { MarketSummaryResponse } from "@/types/api";
-import type { AssetResponse } from "@/types/asset";
+import { useMarketSummary, useAssets } from "@/hooks/use-market-data";
 
 export default function MarketPage() {
-  const [summary, setSummary] = useState<MarketSummaryResponse | null>(null);
-  const [assets, setAssets] = useState<AssetResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: summary, isLoading: summaryLoading } = useMarketSummary();
+  const { data: assetsData, isLoading: assetsLoading } = useAssets({
+    per_page: 50,
+  });
 
-  useEffect(() => {
-    Promise.all([
-      apiClient.getMarketSummary().catch(() => null),
-      apiClient.getAssets({ per_page: 50 }).catch(() => null),
-    ]).then(([summaryRes, assetsRes]) => {
-      if (summaryRes) setSummary(summaryRes);
-      if (assetsRes) setAssets(assetsRes.items);
-      setLoading(false);
-    });
-  }, []);
+  const loading = summaryLoading || assetsLoading;
+  const assets = assetsData?.items ?? [];
 
   if (loading) {
     return (

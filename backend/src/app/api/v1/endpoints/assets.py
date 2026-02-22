@@ -2,7 +2,7 @@
 
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.database import get_db
@@ -20,6 +20,7 @@ router = APIRouter(prefix="/assets", tags=["assets"])
 
 @router.get("/", response_model=PaginatedAssetResponse)
 async def list_assets(
+    response: Response,
     market: str | None = Query(None, description="Filter by market (jp/us)"),
     asset_type: str | None = Query(None, description="Filter by asset type (etf/bond/reit/stock)"),
     search: str | None = Query(None, description="Search by name or symbol"),
@@ -27,6 +28,7 @@ async def list_assets(
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
+    response.headers["Cache-Control"] = "public, max-age=3600"  # 1h
     """Get paginated list of assets with optional filters."""
     assets, total = await get_assets(db, market=market, asset_type=asset_type, search=search, page=page, per_page=per_page)
 
@@ -65,11 +67,13 @@ async def list_assets(
 
 @router.get("/{symbol}/prices", response_model=AssetPricesResponse)
 async def get_prices(
+    response: Response,
     symbol: str,
     period: str = Query("1y", description="Period (1m/3m/6m/1y/3y/5y/max)"),
     interval: str = Query("daily", description="Interval (daily/weekly/monthly)"),
     db: AsyncSession = Depends(get_db),
 ):
+    response.headers["Cache-Control"] = "public, max-age=3600"  # 1h
     """Get price history for a specific asset."""
     asset = await get_asset_by_symbol(db, symbol)
     if not asset:

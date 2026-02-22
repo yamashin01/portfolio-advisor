@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +22,8 @@ router = APIRouter(prefix="/market", tags=["market"])
 
 
 @router.get("/summary", response_model=MarketSummaryResponse)
-async def get_market_summary(db: AsyncSession = Depends(get_db)):
+async def get_market_summary(response: Response, db: AsyncSession = Depends(get_db)):
+    response.headers["Cache-Control"] = "public, max-age=3600"  # 1h
     """Get market summary with latest indices, bonds, and forex data."""
     # Get latest economic indicators
     indicators = {}
@@ -85,7 +86,8 @@ async def get_market_summary(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/indicators", response_model=list[EconomicIndicatorResponse])
-async def get_indicators(db: AsyncSession = Depends(get_db)):
+async def get_indicators(response: Response, db: AsyncSession = Depends(get_db)):
+    response.headers["Cache-Control"] = "public, max-age=3600"  # 1h
     """Get latest economic indicators."""
     # Get latest value for each indicator type
     results = []

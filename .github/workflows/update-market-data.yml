@@ -1,0 +1,58 @@
+name: Update Market Data
+
+on:
+  schedule:
+    # Weekdays at 22:00 UTC (JST 7:00)
+    - cron: "0 22 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: portfolio_advisor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/portfolio_advisor
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      JQUANTS_EMAIL: ${{ secrets.JQUANTS_EMAIL }}
+      JQUANTS_PASSWORD: ${{ secrets.JQUANTS_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync
+
+      - name: Run migrations
+        working-directory: backend
+        run: uv run alembic upgrade head
+
+      - name: Seed assets
+        working-directory: backend
+        run: uv run python -m src.app.cli seed
+
+      - name: Update market data
+        working-directory: backend
+        run: uv run python -m src.app.cli update-market-data
