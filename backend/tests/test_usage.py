@@ -15,7 +15,7 @@ class TestUsageTrackerEstimateCost:
 
     def test_known_model(self):
         cost = UsageTracker._estimate_cost(
-            "claude-sonnet-4-5-20250514", input_tokens=1000, output_tokens=500
+            "claude-sonnet-4-20250514", input_tokens=1000, output_tokens=500
         )
         # input: 1000 * 3.00 / 1M = 0.003, output: 500 * 15.00 / 1M = 0.0075
         expected = (1000 * 3.00 + 500 * 15.00) / 1_000_000
@@ -36,7 +36,7 @@ class TestUsageTrackerEstimateCost:
         assert abs(cost - expected) < 1e-8
 
     def test_zero_tokens(self):
-        cost = UsageTracker._estimate_cost("claude-sonnet-4-5-20250514", 0, 0)
+        cost = UsageTracker._estimate_cost("claude-sonnet-4-20250514", 0, 0)
         assert cost == 0.0
 
 
@@ -84,7 +84,7 @@ class TestUsageTrackerRecordUsage:
 
         await tracker.record_usage(
             endpoint="chat",
-            model="claude-sonnet-4-5-20250514",
+            model="claude-sonnet-4-20250514",
             input_tokens=1000,
             output_tokens=500,
         )

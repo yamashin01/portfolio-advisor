@@ -48,7 +48,7 @@ Markdown形式で回答してください。
 """
 
 # Default model for AI advisor
-AI_MODEL = "claude-sonnet-4-5-20250514"
+AI_MODEL = "claude-sonnet-4-20250514"
 
 
 class AIAdvisor:

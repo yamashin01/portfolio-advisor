@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
 
-AI_MODEL = "claude-sonnet-4-5-20250514"
+AI_MODEL = "claude-sonnet-4-20250514"
 
 
 @router.post("/chat")

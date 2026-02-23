@@ -95,7 +95,7 @@ async def explain_portfolio(
         )
         await tracker.record_usage(
             endpoint="portfolios/explain",
-            model="claude-sonnet-4-5-20250514",
+            model="claude-sonnet-4-20250514",
             input_tokens=usage["input_tokens"],
             output_tokens=usage["output_tokens"],
         )
