@@ -170,6 +170,10 @@ bun run dev
 - 予算超過時は429エラーを返却
 - GET `/api/v1/usage` で現在の利用量を確認可能
 
+## デプロイ
+
+Railway + Vercel へのデプロイ手順は [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) を参照。
+
 ## 免責事項
 
 本サービスは教育・情報提供目的であり、投資助言ではありません。投資判断はご自身の責任で行ってください。
